@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>M2U PARTY Lottery</title>
+	<style>
+	body{padding:0;margin:0;font-family: Impact;-webkit-user-select:none;width:1280px;height:800px;background:#000 url(Lottery.png) no-repeat center center;background-size: 100%;}
+	*{cursor:pointer;}
+	.main{width:1280px;height:800px;}
+	.luckycode{width:62%;height:100%;line-height:800px;font-size:500px;font-weight:900;text-align: center;/*background-color:#0CF;*/color:#FFF;text-shadow:20px 20px 10px #000000;}
+	.luckycode::selection{background: red;color: #fff;}
+	.luckiedcode{width:38%;height:100%;padding:0;margin:0;overflow-y:scroll;list-style:none;/*background-color:#CE0;*/}
+	.luckiedcode li{margin: 10px;padding: 0;font-size: 36px;font-weight: 900;color:#FFF;font-family: Arial;}
+	.luckiedcode li:hover{margin-left:5px;}
+	.fleft{float:left;}
+	.fs50{font-size:120px;}
+	</style>
+</head>
+<body>
+	<div class="main">
+		<div class="luckycode fleft">
+			0
+		</div>
+		<ul class="luckiedcode fleft">
+			<li style="font-size:40px;">!请等待幸运时刻的降临!</li>
+		</ul>
+	</div>
+	<script>
+	(function(w, d){
+		var KEYCODE_SPACEBAR = 32;
+		var luckycode_running = false;
+		var luckycode_lock = false;
+		var luckycode_timeinterval = 0;
+		var luckycode_bink_timeinterval = 0;
+		var luckycode_repeat_count = 0;
+		var luckycode_list_count = 0;
+		var hash = w.location.hash.substr(1);
+		var param = hash.split(',');
+		var lucky_min = parseInt(param[0]);
+		var lucky_max = parseInt(param[1]);
+		var lucky_list = [];
+
+		if ((!lucky_min) || (!lucky_max)) {
+			// alert('ERROR!! 请在地址栏中指定最大及最小值. 比如 #1,180');
+			window.location.href = window.location.href+'#1,180';
+			window.location.reload();
+		}
+
+		var lucky_run = function () {
+			if (luckycode_lock) return;
+			luckycode_running = true;
+			var _doc = d.querySelector('.luckycode');
+			_doc.innerHTML = '';
+			_doc.classList.remove('fs50');
+			luckycode_timeinterval = setInterval(function(){
+				var _num = (lucky_max - lucky_min) * Math.random() + lucky_min;
+				_num = parseInt(_num);
+				_doc.innerHTML = _num.toString();
+			}, 50);
+		};
+
+		var check_repeat = function (number) {
+			for (var i in lucky_list) {
+				if (lucky_list[i] == number) {
+					return true;
+				}
+			}
+			lucky_list.push(number);
+			return false;
+		};
+
+		var lucky_stop = function () {
+			if (luckycode_lock) return;
+			luckycode_lock = true;
+			luckycode_running = false;
+			clearInterval(luckycode_timeinterval);
+			luckycode_timeinterval = 0;
+			var _doc = d.querySelector('.luckycode');
+			var _num = parseInt(_doc.innerHTML);
+			_doc.innerHTML = '';
+			while (check_repeat(_num)) {
+				luckycode_repeat_count++;
+				if (luckycode_repeat_count > 60) {
+					_doc.innerHTML = '幸运数字好像被抽光了……';
+					_doc.classList.add('fs50');
+					return;
+				}
+				_num = parseInt((lucky_max - lucky_min) * Math.random() + lucky_min);
+			}
+			luckycode_repeat_count = 0;
+
+			luckycode_bink_timeinterval = setInterval(function(){
+				if (_doc.innerHTML == '') {
+					_doc.innerHTML = _num.toString();
+				} else {
+					_doc.innerHTML = '';
+				}
+			}, 250);
+			setTimeout(function(){
+				if (luckycode_bink_timeinterval) {
+					clearInterval(luckycode_bink_timeinterval);
+					luckycode_bink_timeinterval = 0;
+					_doc.innerHTML = _num.toString();
+					prepend_luck(_num);
+					luckycode_lock = false;
+				}
+			}, 1500); // blink 3 times
+		};
+
+		var prepend_luck = function (number) {
+			var _l = d.querySelector('.luckiedcode');
+			var _n = gen_list_item_with_time(number);
+			if (luckycode_list_count == 0) {
+				_l.innerHTML = '';
+			}
+			var _h = _l.innerHTML;
+			_l.innerHTML = _n + _h;
+			luckycode_list_count++;
+			return true;
+		};
+
+		var gen_list_item = function (number, time_str) {
+			return '<li>幸运数: '+ number.toString() +' / 时间: ' + time_str + '</li>';
+		}
+		var gen_list_item_with_time = function (number) {
+			var d = new Date();
+			var _h = d.getHours(), _m = d.getMinutes();
+			if (_h < 10) _h = '0' + _h.toString();
+			if (_m < 10) _m = '0' + _m.toString();
+			return gen_list_item(number, _h + ":" + _m);
+		};
+
+		d.addEventListener('keyup', function(evt){
+			if (evt.keyCode == KEYCODE_SPACEBAR) {
+				if (!luckycode_running) lucky_run();
+				else lucky_stop();
+			}
+		});
+		// d.querySelector('.luckycode').addEventListener('click', function(){
+		// 	if (!luckycode_running) lucky_run();
+		// 	else lucky_stop();
+		// });
+	})(window, document);
+	</script>
+</body>
+</html>
